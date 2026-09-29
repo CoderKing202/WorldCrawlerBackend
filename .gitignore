@@ -1,2 +1,5 @@
 node_modules
 .env
+google-drive-key-no-use.json
+google-token.json
+google-oauth-credentials.json
