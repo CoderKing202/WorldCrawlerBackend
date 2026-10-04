@@ -1,46 +1,40 @@
-require("dotenv").config()
-const cors= require("cors")
+require("dotenv").config();
+const cors = require("cors");
 const connectDB = require("./config/db.js");
 const express = require("express");
 const app = express();
-const authRoutes = require("./routes/authRoutes.js")
-const session = require("express-session")
-app.use(express.json())
-app.use(cors({
-  origin:"http://localhost:5173",
-  credentials:true
-}))
-app.use(
-  session(
-    {
-      secret:process.env.SESSION_SECRET,
-      resave:false,
-      saveUninitialized:false
-    }
-  )
-)
-app.use("/users",authRoutes)
+const authRoutes = require("./routes/authRoutes.js");
+const session = require("express-session");
+const { drive } = require("./config/googleDrive.js");
+const  utilityRoutes  = require("./routes/utilityRoutes.js");
 
+app.use(express.json());
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  }),
+);
+
+app.use(
+  session({
+    name: "worldcrawler.sid",
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+  }),
+);
+app.use(utilityRoutes)
+app.use("/user", authRoutes);
 
 
 async function startServer() {
-  await connectDB();// connection made 
-  app.listen(process.env.PORT,()=>{// server is listening for request
-    console.log("Server Started at port " + process.env.PORT)
-  })
+  await connectDB(); // connection made
+  app.listen(process.env.PORT, () => {
+    // server is listening for request
+    console.log("Server Started at port " + process.env.PORT);
+  });
 }
-
-startServer()
-
-// const express = require("express");
-// const cors = require("cors");
-// const {drive} = require("./config/googleDrive.js");
-
-// const app = express();
-
-// app.use(cors());
-// app.use(express.json());
-
 
 // const getFileId = async (folderId) => {
 //   const result = await drive.files.list({
@@ -48,37 +42,52 @@ startServer()
 //     fields: "files(id,name,mimeType)",
 //     pageSize: 10,
 //   });
-// console.log(result.data)
+//   console.log(result.data);
 //   // return result.data.files[0]?.id;
 // };
 
-// app.get("/video/:fileId", async (req, res) => {
-//   try {
-//     getFileId("1oaI3uaRuk-e2j860JtotnupW394RzdZb")
-//     const fileId = req.params.fileId;
+app.get("/media/:contentType/:fileId", async (req, res) => {
+  const { fileId, contentType } = req.params;
+  try {
+    // getFileId("1oaI3uaRuk-e2j860JtotnupW394RzdZb");
 
-//     const response = await drive.files.get(
-//       {
-//         fileId: fileId,
-//         alt: "media",
-//       },
-//       {
-//         responseType: "stream",
-//       }
-//     );
+    console.log(contentType);
+    const response = await drive.files.get(
+      {
+        fileId: fileId,
+        alt: "media",
+      },
+      {
+        responseType: "stream",
+      },
+    );
 
-//     res.setHeader(
-//       "Content-Type",
-//       response.headers["content-type"] || "video/mp4"
-//     );
+    if (contentType === "video" || contentType === "reel") {
+      res.setHeader(
+        "Content-Type",
+        response.headers.get("content-type") || "video/mp4",
+      );
+    } else if (contentType === "image") {
+      res.setHeader(
+        "Content-Type",
+        response.headers.get("content-type") || "image/png",
+      );
+    }
+    response.data.pipe(res);
+  } catch (e) {
+    console.error(e);
+    switch (contentType) {
+      case "video":
+        res.status(500).send("Video could not be loaded");
+        break;
+      case "image":
+        res.status(500).send("Image could not be loaded");
+        break;
+      case "reel":
+        res.status(500).send("Reel could not be loaded");
+        break;
+    }
+  }
+});
 
-//     response.data.pipe(res);
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).send("Video could not be loaded");
-//   }
-// });
-
-// app.listen(5000, () => {
-//   console.log("Server started on port 5000");
-// });
+startServer();

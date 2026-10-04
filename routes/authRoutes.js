@@ -8,6 +8,8 @@ const { uploadFile } = require("../config/googleDrive.js");
 const fs = require("fs");
 const upload = multer({ dest: "uploads/" });
 // const jwt = require("jsonwebtoken");
+const Follow = require("../modals/Follows.js");
+const Posts = require("../modals/Posts.js");
 
 router.post("/signup", upload.single("profileImageFile"), async (req, res) => {
   /* signUp route*/
@@ -52,7 +54,7 @@ router.post("/signup", upload.single("profileImageFile"), async (req, res) => {
       "1oaI3uaRuk-e2j860JtotnupW394RzdZb",
     );
 
-    profileImage = `https:/localhost:5000/proxy?id=${fileId}`;
+    profileImage = `http://localhost:5000/media/image/${fileId}`;
     fs.unlinkSync(req.file.path);
   } else {
     profileImage = "http://localhost:5173/World-Crawler/defaultUserImage.jpg";
@@ -74,7 +76,7 @@ router.post("/signup", upload.single("profileImageFile"), async (req, res) => {
   });
 });
 
-router.post("/login", upload.single("profileImageFile"),async (req, res) => {
+router.post("/login", upload.single("profileImageFile"), async (req, res) => {
   let { email, password } = req.body;
   const fields = ["email", "password"];
   const error = { type: "none", key: "none" };
@@ -114,15 +116,87 @@ router.post("/login", upload.single("profileImageFile"),async (req, res) => {
   if (!isMatch) {
     res.status(401).json({
       success: false,
-      error: "Invalid email or password", 
+      error: "Invalid email or password",
     });
-    return
+    return;
   }
-  console.log("Hello")
-  req.session.userId = user._id
+  console.log("Hello");
+  req.session.userId = user._id;
   res.status(200).json({
-    success:true
-  })
+    success: true,
+  });
 });
 
+router.post("/isLogin", (req, res) => {
+  const userId = req.session.userId;
+  let isLogin = false;
+  if (userId) {
+    isLogin = true;
+  } else {
+    isLogin = false;
+  }
+  console.log(isLogin);
+  res.status(200).json({
+    isLogin,
+  });
+});
+
+router.post("/logout", async (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({
+        success: false,
+      });
+    }
+    res.clearCookie("worldcrawler.sid");
+    res.status(200).json({
+      success: true,
+    });
+  });
+});
+
+router.get("/:username", async (req, res) => {
+  const userName = req.params.username;
+  let user = await User.findOne({
+    username: userName,
+  });
+  // user = user.
+  if (user) {
+    const { username, email, profileImage, bio, _id } = user;
+    const no_of_followers = await Follow.countDocuments({
+      following: _id,
+    });
+    const no_of_following = await Follow.countDocuments({
+      follower: _id,
+    });
+    const no_of_reels = await Posts.countDocuments({
+      author: _id,
+      postType: "reel",
+    });
+    const no_of_posts = await Posts.countDocuments({
+      author: _id,
+      postType: "post",
+    });
+    console.log(no_of_reels)
+    let userDetails = {
+      username,
+      email,
+      profileImage,
+      bio,
+      no_of_followers,
+      no_of_following,
+      userId: _id,
+      no_of_reels,
+      no_of_posts,
+    };
+    res.json({
+      success: true,
+      user: userDetails,
+    });
+  } else {
+    res.status(404).json({
+      success: false,
+    });
+  }
+});
 module.exports = router;

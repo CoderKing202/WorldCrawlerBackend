@@ -1,9 +1,8 @@
 const { google } = require("googleapis");
 const credentials = require("./google-oauth-credentials.json");
 const token = require("./google-token.json");
-const path =require("path")
+const path = require("path")
 const fs = require("fs");
-
 const { client_id, client_secret, redirect_uris } = credentials.installed;
 
 // const auth = new google.auth.GoogleAuth({
