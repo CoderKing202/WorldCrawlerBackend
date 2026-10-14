@@ -6,9 +6,47 @@ const app = express();
 const authRoutes = require("./routes/authRoutes.js");
 const session = require("express-session");
 const { drive } = require("./config/googleDrive.js");
-const  utilityRoutes  = require("./routes/utilityRoutes.js");
+const utilityRoutes = require("./routes/utilityRoutes.js");
+const http = require("http");
+const server = http.createServer(app);
+const SocketIO = require("socket.io");
+const sessionMiddleWare = session({
+  name: "worldcrawler.sid",
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+});
+const io = new SocketIO.Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    credentials: true,
+  },
+});
 
+const connectedUsers = new Map();
+app.set("io", io);
+app.set("connectedUsers", connectedUsers);
+// io.use((socket, next) => {
+//   sessionMiddleWare(socket.request, socket.request.res, next);
+// }); //failed attempt
+io.engine.use(sessionMiddleWare);
+
+io.on("connection", (socket) => {
+  ;
+  const userId = socket.request.session.userId;
+  if (userId) {
+    console.log("Client connected")
+    connectedUsers.set(userId.toString(), socket.id);
+    console.log(connectedUsers);
+    socket.on("disconnect", () => {
+      connectedUsers.delete(userId.toString());
+      console.log("Client disconnected:", userId);
+      console.log(connectedUsers);
+    });
+  }
+});
 app.use(express.json());
+
 app.use(
   cors({
     origin: true,
@@ -16,21 +54,13 @@ app.use(
   }),
 );
 
-app.use(
-  session({
-    name: "worldcrawler.sid",
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-  }),
-);
-app.use(utilityRoutes)
+app.use(sessionMiddleWare);
+app.use(utilityRoutes);
 app.use("/user", authRoutes);
-
 
 async function startServer() {
   await connectDB(); // connection made
-  app.listen(process.env.PORT, () => {
+  server.listen(process.env.PORT, () => {
     // server is listening for request
     console.log("Server Started at port " + process.env.PORT);
   });

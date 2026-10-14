@@ -127,17 +127,25 @@ router.post("/login", upload.single("profileImageFile"), async (req, res) => {
   });
 });
 
-router.post("/isLogin", (req, res) => {
+router.post("/isLogin", async (req, res) => {
   const userId = req.session.userId;
+  const user = await User.findOne({
+    _id: userId,
+  });
+  console.log(user)
   let isLogin = false;
   if (userId) {
     isLogin = true;
   } else {
     isLogin = false;
+    return res.status(200).json({
+      isLogin,
+    });
   }
-  console.log(isLogin);
+  console.log("isLogin",isLogin);
   res.status(200).json({
     isLogin,
+    username: user.username,
   });
 });
 
@@ -177,7 +185,7 @@ router.get("/:username", async (req, res) => {
       author: _id,
       postType: "post",
     });
-    console.log(no_of_reels)
+    console.log(no_of_reels);
     let userDetails = {
       username,
       email,

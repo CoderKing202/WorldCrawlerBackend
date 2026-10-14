@@ -6,16 +6,16 @@ const MessagesSchema = mongoose.Schema(
       ref: "Conversation",
       required: true,
     },
-    sender: {
+    senderId: {
       type: mongoose.Types.ObjectId,
       ref: "User",
-      required:true
+      required: true,
     },
     content: String,
-    media: { type: String},
   },
+  
   { timestamps: true },
 );
 
-const MessagesModel = mongoose.model("Message",MessagesSchema)
-module.exports = MessagesModel
+const MessagesModel = mongoose.model("Message", MessagesSchema);
+module.exports = MessagesModel;
