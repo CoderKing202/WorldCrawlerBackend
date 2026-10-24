@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const PostsSchema = mongoose.Schema(
   {
     author: { type: mongoose.Types.ObjectId, ref: "User" },
-    content: { type: String, required: true },
-    media: { type: String, required: true },
+    caption: { type: String, required: true },
+    mediaUrl: { type: String, required: true },
     mediaType: { type: String, required: true, enum: ["image", "video"] },
     postType:{type:String,required:true,enum:["post","reel"]}
   },

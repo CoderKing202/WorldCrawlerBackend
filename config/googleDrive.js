@@ -1,7 +1,7 @@
 const { google } = require("googleapis");
 const credentials = require("./google-oauth-credentials.json");
 const token = require("./google-token.json");
-const path = require("path")
+const path = require("path");
 const fs = require("fs");
 const { client_id, client_secret, redirect_uris } = credentials.installed;
 
@@ -23,10 +23,10 @@ const drive = google.drive({ version: "v3", auth });
 //     fields: "files(id,name)",
 //   })
 //   .then((result) => {
-//     console.log(result.data.files);
+//     //console.log(result.data.files);
 //   })
 //   .catch((error) => {
-//     console.log(error.message);
+//     //console.log(error.message);
 //   });
 
 // drive.files.create({
@@ -38,8 +38,8 @@ const drive = google.drive({ version: "v3", auth });
 // })
 
 const uploadFile = async (filePath, fileName, mimeType, folderId) => {
-  const parsed = path.parse(fileName)
-  fileName = `${parsed.name}-${Date.now()}${parsed.ext}`
+  const parsed = path.parse(fileName);
+  fileName = `${parsed.name}-${Date.now()}${parsed.ext}`;
   const result = await drive.files.create({
     requestBody: {
       name: fileName,
@@ -54,5 +54,10 @@ const uploadFile = async (filePath, fileName, mimeType, folderId) => {
   return result.data.id;
 };
 
-module.exports = {uploadFile,drive};
+const deleteFile = async (fileId) => {
+  await drive.files.delete({
+    fileId: fileId,
+  });
+};
 
+module.exports = { uploadFile, drive ,deleteFile};

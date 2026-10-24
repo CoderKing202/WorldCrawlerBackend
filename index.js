@@ -7,6 +7,7 @@ const authRoutes = require("./routes/authRoutes.js");
 const session = require("express-session");
 const { drive } = require("./config/googleDrive.js");
 const utilityRoutes = require("./routes/utilityRoutes.js");
+const postRoutes = require("./routes/postRoutes.js")
 const http = require("http");
 const server = http.createServer(app);
 const SocketIO = require("socket.io");
@@ -23,6 +24,7 @@ const io = new SocketIO.Server(server, {
   },
 });
 
+
 const connectedUsers = new Map();
 app.set("io", io);
 app.set("connectedUsers", connectedUsers);
@@ -35,13 +37,13 @@ io.on("connection", (socket) => {
   ;
   const userId = socket.request.session.userId;
   if (userId) {
-    console.log("Client connected")
+    //console.log("Client connected")
     connectedUsers.set(userId.toString(), socket.id);
-    console.log(connectedUsers);
+    //console.log(connectedUsers);
     socket.on("disconnect", () => {
       connectedUsers.delete(userId.toString());
-      console.log("Client disconnected:", userId);
-      console.log(connectedUsers);
+      //console.log("Client disconnected:", userId);
+      //console.log(connectedUsers);
     });
   }
 });
@@ -55,14 +57,16 @@ app.use(
 );
 
 app.use(sessionMiddleWare);
-app.use(utilityRoutes);
 app.use("/user", authRoutes);
+app.use("/upload",postRoutes)
+app.use(utilityRoutes);
+
 
 async function startServer() {
   await connectDB(); // connection made
   server.listen(process.env.PORT, () => {
     // server is listening for request
-    console.log("Server Started at port " + process.env.PORT);
+    //console.log("Server Started at port " + process.env.PORT);
   });
 }
 
@@ -72,7 +76,7 @@ async function startServer() {
 //     fields: "files(id,name,mimeType)",
 //     pageSize: 10,
 //   });
-//   console.log(result.data);
+//   //console.log(result.data);
 //   // return result.data.files[0]?.id;
 // };
 
@@ -81,7 +85,7 @@ app.get("/media/:contentType/:fileId", async (req, res) => {
   try {
     // getFileId("1oaI3uaRuk-e2j860JtotnupW394RzdZb");
 
-    console.log(contentType);
+    //console.log(contentType);
     const response = await drive.files.get(
       {
         fileId: fileId,
@@ -105,7 +109,7 @@ app.get("/media/:contentType/:fileId", async (req, res) => {
     }
     response.data.pipe(res);
   } catch (e) {
-    console.error(e);
+    //console.error(e);
     switch (contentType) {
       case "video":
         res.status(500).send("Video could not be loaded");

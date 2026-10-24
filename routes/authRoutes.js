@@ -44,10 +44,10 @@ router.post("/signup", upload.single("profileImageFile"), async (req, res) => {
   const passwordHash = await bcrypt.hash(
     password,
     10,
-  ); /* hasing the password for security */
+  ); /* hashing the password for security */
 
   if (req.file) {
-    const fileId = await uploadFile(
+    const fileId = uploadFile(
       req.file.path,
       req.file.originalname,
       req.file.mimetype,
@@ -59,7 +59,7 @@ router.post("/signup", upload.single("profileImageFile"), async (req, res) => {
   } else {
     profileImage = "http://localhost:5173/World-Crawler/defaultUserImage.jpg";
   }
-  console.log(profileImage);
+  //console.log(profileImage);
   const UserModel = new User({
     username: userName,
     email,
@@ -120,7 +120,7 @@ router.post("/login", upload.single("profileImageFile"), async (req, res) => {
     });
     return;
   }
-  console.log("Hello");
+  //console.log("Hello");
   req.session.userId = user._id;
   res.status(200).json({
     success: true,
@@ -132,7 +132,7 @@ router.post("/isLogin", async (req, res) => {
   const user = await User.findOne({
     _id: userId,
   });
-  console.log(user)
+  //console.log(user)
   let isLogin = false;
   if (userId) {
     isLogin = true;
@@ -142,7 +142,7 @@ router.post("/isLogin", async (req, res) => {
       isLogin,
     });
   }
-  console.log("isLogin",isLogin);
+  //console.log("isLogin",isLogin);
   res.status(200).json({
     isLogin,
     username: user.username,
@@ -162,7 +162,23 @@ router.post("/logout", async (req, res) => {
     });
   });
 });
-
+router.get("/getUser", async (req,res)=>{
+    const userId = req.session.userId
+    const user = await User.findOne({
+      _id:userId
+    })
+     console.log("Hello")
+    if(!user){
+      return res.json({
+        success:false
+      })
+    }
+    const {passwordHash,...remainingUserProperties} = user.toObject()
+    res.json({
+      success:true,
+      user:remainingUserProperties
+    })
+})
 router.get("/:username", async (req, res) => {
   const userName = req.params.username;
   let user = await User.findOne({
@@ -185,7 +201,7 @@ router.get("/:username", async (req, res) => {
       author: _id,
       postType: "post",
     });
-    console.log(no_of_reels);
+    //console.log(no_of_reels);
     let userDetails = {
       username,
       email,
@@ -200,6 +216,7 @@ router.get("/:username", async (req, res) => {
     res.json({
       success: true,
       user: userDetails,
+     
     });
   } else {
     res.status(404).json({
@@ -207,4 +224,7 @@ router.get("/:username", async (req, res) => {
     });
   }
 });
+
+
+
 module.exports = router;
