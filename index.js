@@ -109,7 +109,7 @@ app.get("/media/:contentType/:fileId", async (req, res) => {
     }
     response.data.pipe(res);
   } catch (e) {
-    //console.error(e);
+    console.error(e);
     switch (contentType) {
       case "video":
         res.status(500).send("Video could not be loaded");
