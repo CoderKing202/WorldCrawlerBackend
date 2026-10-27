@@ -7,6 +7,7 @@ const Post = require("../modals/Posts.js");
 const fs = require("fs");
 const { json } = require("stream/consumers");
 const Like = require("../modals/Likes.js");
+const Comment = require("../modals/Comments.js");
 
 router.post(
   "/uploadContent",
@@ -68,20 +69,23 @@ router.post(
     });
   },
 );
-router.get("/getContentsLinks/:postType", async (req, res) => {
+router.get("/getContentsDetails/:postType", async (req, res) => {
   const userId = req.session.userId;
   const { postType } = req.params;
   try {
     if (userId) {
-      let contents = await Post.find({
+      let contentDetails = await Post.find({
         postType,
       });
-      contents = contents.map((content) => {
-        return content.mediaUrl;
+      contentDetails = contentDetails.map((detail) => {
+        return {
+          mediaUrl:detail.mediaUrl,
+          caption:detail.caption
+        };
       });
       res.status(200).json({
         success: true,
-        contents,
+        contentDetails,
       });
     } else {
       return res.status(401).json({
@@ -104,6 +108,7 @@ router.post("/likeContent", async (req, res) => {
       success: false,
     });
   }
+  console.log(req.body);
   const { src } = req.body;
   try {
     const post = await Post.findOne({
@@ -137,6 +142,7 @@ router.post("/unLikeContent", async (req, res) => {
       success: false,
     });
   }
+  console.log(req.body);
   const { src } = req.body;
   try {
     const post = await Post.findOne({
@@ -196,4 +202,91 @@ router.get("/likeStatus", async (req, res) => {
   }
 });
 
+router.post("/comment", async (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+    });
+  }
+  const user = await User.findOne({
+    _id: userId,
+  });
+
+  const { src, text } = req.body;
+  try {
+    const post = await Post.findOne({
+      mediaUrl: src,
+    });
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+      });
+    }
+    const newComment = new Comment({
+      post: post._id,
+      author: userId,
+    });
+    await newComment.save();
+
+    const { username, imageUrl } = user;
+
+    res.status(200).json({
+      success: true,
+      commentInfo: {
+        username,
+        imageUrl,
+        text,
+      },
+    });
+  } catch (e) {
+    console.log(e);
+    res.json({
+      success: false,
+    });
+  }
+});
+router.get("/getComments", async (req, res) => {
+  const userId = req.session.userId;
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+    });
+  }
+  const user = await User.findOne({
+    _id: userId,
+  });
+
+  const { src } = req.query;
+  try {
+    const post = await Post.findOne({
+      mediaUrl: src,
+    });
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+      });
+    }
+    let savedComments = await Comment.find({
+      post: post._id,
+      author: userId,
+    });
+    let comments=[]
+    savedComments.forEach((comment) => {
+      const {text} = comment
+      comments.push({
+        username:user.username,
+        imageUrl:user.ImageUrl,
+        text
+      })
+    });
+    if (savedComments.length !== 0) {
+      return res.json({ success: true, comments });
+    }
+  } catch (e) {
+    res.status(500).json({
+      success: false,
+    });
+  }
+});
 module.exports = router;
