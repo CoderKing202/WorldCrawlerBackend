@@ -8,6 +8,7 @@ const session = require("express-session");
 const { drive } = require("./config/googleDrive.js");
 const utilityRoutes = require("./routes/utilityRoutes.js");
 const postRoutes = require("./routes/postRoutes.js")
+const postRoutesTwo= require("./routes/postRoutesTwo.js")
 const http = require("http");
 const server = http.createServer(app);
 const SocketIO = require("socket.io");
@@ -59,6 +60,7 @@ app.use(
 app.use(sessionMiddleWare);
 app.use("/user", authRoutes);
 app.use("/upload",postRoutes)
+app.use("/upload",postRoutesTwo)
 app.use(utilityRoutes);
 
 
