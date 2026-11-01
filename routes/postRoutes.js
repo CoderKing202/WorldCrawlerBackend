@@ -76,6 +76,7 @@ router.get("/getContentsDetails/:postType", async (req, res) => {
     if (userId) {
       let contentDetails = await Post.find({
         postType,
+        author:userId
       });
       contentDetails = contentDetails.map((detail) => {
         return {
