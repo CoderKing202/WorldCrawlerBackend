@@ -10,7 +10,6 @@ const Like = require("../modals/Likes.js");
 const Comment = require("../modals/Comments.js");
 
 router.get("/getHomePosts", async (req, res) => {
-
   const page = Math.max(1, req.query.page || 1);
 
   const limit = 5;
@@ -19,11 +18,10 @@ router.get("/getHomePosts", async (req, res) => {
     // console.log(await Post.countDocuments());
 
     const posts = await Post.find()
-    .populate("author","username profileImage")
+      .populate("author", "username profileImage")
       .sort({ _id: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
-
 
     res.json({
       success: true,
@@ -38,7 +36,6 @@ router.get("/getHomePosts", async (req, res) => {
 });
 
 router.get("/getSearchPagePosts", async (req, res) => {
-
   const page = Math.max(1, req.query.page || 1);
 
   const limit = 10;
@@ -47,11 +44,10 @@ router.get("/getSearchPagePosts", async (req, res) => {
     // console.log(await Post.countDocuments());
 
     const posts = await Post.find()
-    .populate("author","username profileImage")
+      .populate("author", "username profileImage")
       .sort({ _id: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
-
 
     res.json({
       success: true,
@@ -66,7 +62,6 @@ router.get("/getSearchPagePosts", async (req, res) => {
 });
 
 router.get("/getReels", async (req, res) => {
-
   const page = Math.max(1, req.query.page || 1);
 
   const limit = 5;
@@ -75,13 +70,13 @@ router.get("/getReels", async (req, res) => {
     // console.log(await Post.countDocuments());
 
     const reels = await Post.find({
-      postType:"reel"
+      postType: "reel",
     })
-    .populate("author","username profileImage")
+      .populate("author", "username profileImage")
       .sort({ _id: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
-  // console.log(posts)
+    // console.log(posts)
 
     res.json({
       success: true,
@@ -91,6 +86,46 @@ router.get("/getReels", async (req, res) => {
   } catch (e) {
     res.status(500).json({
       success: false,
+    });
+  }
+});
+
+router.post("/comment", async (req, res) => {
+  const userId = req.session.userId;
+  const { text, postContentUrl } = req.body;
+  try {
+    const post = await Post.findOne({
+      mediaUrl: postContentUrl,
+    }).populate("author", "username", "profileImage");
+    if (!post) {
+      return res.status(500).json({
+        success: false,
+      });
+    }
+    const newComment = new Comment({
+      post: post_id,
+      author: userId,
+      text,
+    });
+
+    const savedNewComment = await newComment.save();
+    if (!savedNewComment) {
+      return res.status(500).json({
+        success: false,
+      });
+    }
+    res.json({
+      success: true,
+      text,
+      user: {
+        username: post.author.username,
+        profileImageUrl: post.author.profileImage,
+      },
+    });
+  } catch (e) {
+    return res.status(500).json({
+      success: false,
+      error: e,
     });
   }
 });
