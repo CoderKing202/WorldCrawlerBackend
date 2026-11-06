@@ -76,12 +76,12 @@ router.get("/getContentsDetails/:postType", async (req, res) => {
     if (userId) {
       let contentDetails = await Post.find({
         postType,
-        author:userId
+        author: userId,
       });
       contentDetails = contentDetails.map((detail) => {
         return {
-          mediaUrl:detail.mediaUrl,
-          caption:detail.caption
+          mediaUrl: detail.mediaUrl,
+          caption: detail.caption,
         };
       });
       res.status(200).json({
@@ -205,48 +205,47 @@ router.get("/likeStatus", async (req, res) => {
 
 router.post("/comment", async (req, res) => {
   const userId = req.session.userId;
-  if (!userId) {
-    return res.status(401).json({
-      success: false,
-    });
-  }
-  const user = await User.findOne({
-    _id: userId,
-  });
-
-  const { src, text } = req.body;
+  const { text, postContentUrl } = req.body;
   try {
     const post = await Post.findOne({
-      mediaUrl: src,
-    });
+      mediaUrl: postContentUrl,
+    }).populate("author", "username profileImage");
+
     if (!post) {
-      return res.status(404).json({
+      return res.status(500).json({
         success: false,
       });
     }
+    console.log(post);
     const newComment = new Comment({
       post: post._id,
       author: userId,
+      text,
     });
-    await newComment.save();
 
-    const { username, imageUrl } = user;
-
-    res.status(200).json({
+    const savedNewComment = await newComment.save();
+    if (!savedNewComment) {
+      return res.status(500).json({
+        success: false,
+      });
+    }
+    res.json({
       success: true,
-      commentInfo: {
-        username,
-        imageUrl,
-        text,
+      text,
+      user: {
+        username: post.author.username,
+        profileImageUrl: post.author.profileImage,
       },
     });
   } catch (e) {
     console.log(e);
-    res.json({
+    return res.status(500).json({
       success: false,
+      error: e,
     });
   }
 });
+
 router.get("/getComments", async (req, res) => {
   const userId = req.session.userId;
   if (!userId) {
@@ -270,16 +269,15 @@ router.get("/getComments", async (req, res) => {
     }
     let savedComments = await Comment.find({
       post: post._id,
-      author: userId,
     });
-    let comments=[]
+    let comments = [];
     savedComments.forEach((comment) => {
-      const {text} = comment
+      const { text } = comment;
       comments.push({
-        username:user.username,
-        imageUrl:user.ImageUrl,
-        text
-      })
+        username: user.username,
+        imageUrl: user.ImageUrl,
+        text,
+      });
     });
     if (savedComments.length !== 0) {
       return res.json({ success: true, comments });

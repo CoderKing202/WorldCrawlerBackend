@@ -17,7 +17,7 @@ router.get("/getHomePosts", async (req, res) => {
   try {
     // console.log(await Post.countDocuments());
 
-    const posts = await Post.find()
+    const posts = await Post.find({postType:"post"})
       .populate("author", "username profileImage")
       .sort({ _id: -1 })
       .skip((page - 1) * limit)
@@ -90,44 +90,6 @@ router.get("/getReels", async (req, res) => {
   }
 });
 
-router.post("/comment", async (req, res) => {
-  const userId = req.session.userId;
-  const { text, postContentUrl } = req.body;
-  try {
-    const post = await Post.findOne({
-      mediaUrl: postContentUrl,
-    }).populate("author", "username", "profileImage");
-    if (!post) {
-      return res.status(500).json({
-        success: false,
-      });
-    }
-    const newComment = new Comment({
-      post: post_id,
-      author: userId,
-      text,
-    });
 
-    const savedNewComment = await newComment.save();
-    if (!savedNewComment) {
-      return res.status(500).json({
-        success: false,
-      });
-    }
-    res.json({
-      success: true,
-      text,
-      user: {
-        username: post.author.username,
-        profileImageUrl: post.author.profileImage,
-      },
-    });
-  } catch (e) {
-    return res.status(500).json({
-      success: false,
-      error: e,
-    });
-  }
-});
 
 module.exports = router;
